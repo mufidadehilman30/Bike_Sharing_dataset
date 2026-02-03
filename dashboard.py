@@ -1,47 +1,48 @@
+
+import matplotlib
+matplotlib.use("Agg")
+
 import pandas as pd
 import matplotlib.pyplot as plt
-import matplotlib.use('Agg')
 import streamlit as st
 import os
 
 # ==============================
-# JUDUL DASHBOARD
+# TITLE
 # ==============================
-st.title("Dashboard Analisis Penyewaan Sepeda")
+st.title("Bike Sharing Dashboard")
 
 # ==============================
 # LOAD DATA
 # ==============================
-DATA_PATH = "main_data.csv"   # ganti jika nama file berbeda
+DATA_PATH = "data.csv"
 
 if not os.path.exists(DATA_PATH):
-    st.error(f"File {DATA_PATH} tidak ditemukan")
+    st.error(f"File {DATA_PATH} tidak ditemukan. Pastikan data.csv ada di folder yang sama.")
     st.stop()
 
 df = pd.read_csv(DATA_PATH)
 
 st.success("Data berhasil dimuat")
-st.write("Contoh Data:")
 st.dataframe(df.head())
 
 # ==============================
-# CEK KOLOM WAJIB
+# CHECK REQUIRED COLUMNS
 # ==============================
-required_cols = ["mnth", "weathersit", "cnt"]
-
-for col in required_cols:
+required_columns = ["mnth", "weathersit", "cnt"]
+for col in required_columns:
     if col not in df.columns:
         st.error(f"Kolom '{col}' tidak ditemukan di dataset")
         st.stop()
 
 # ==============================
-# AGREGASI DATA
+# PROCESS DATA
 # ==============================
 monthly_avg = df.groupby("mnth")["cnt"].mean()
 weather_avg = df.groupby("weathersit")["cnt"].mean()
 
 # ==============================
-# GRAFIK 1: RATA-RATA BULANAN
+# MONTHLY PLOT
 # ==============================
 st.subheader("Rata-rata Penyewaan per Bulan")
 
@@ -56,9 +57,9 @@ else:
     st.pyplot(fig1)
 
 # ==============================
-# GRAFIK 2: CUACA
+# WEATHER PLOT
 # ==============================
-st.subheader("Rata-rata Penyewaan berdasarkan Cuaca")
+st.subheader("Rata-rata Penyewaan Berdasarkan Cuaca")
 
 if weather_avg.empty:
     st.warning("Data cuaca kosong")
@@ -67,12 +68,11 @@ else:
     ax2.bar(weather_avg.index.astype(str), weather_avg.values)
     ax2.set_xlabel("Kategori Cuaca")
     ax2.set_ylabel("Rata-rata Penyewaan")
-    ax2.set_title("Pengaruh Cuaca terhadap Penyewaan")
+    ax2.set_title("Pengaruh Cuaca Terhadap Penyewaan")
     st.pyplot(fig2)
 
 # ==============================
-# STATISTIK DESKRIPTIF
+# STATISTICS
 # ==============================
-st.subheader("Statistik Penyewaan")
-
+st.subheader("Statistik Deskriptif")
 st.write(df["cnt"].describe())
