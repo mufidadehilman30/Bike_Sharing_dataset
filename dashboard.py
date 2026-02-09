@@ -1,73 +1,148 @@
-import os
 import pandas as pd
 import matplotlib.pyplot as plt
 import streamlit as st
-# ==============================
-# TITLE
-# ==============================
-st.title("Bike Sharing Dashboard")
 
-# ==============================
+# =========================
 # LOAD DATA
-# ==============================
-DATA_PATH = "main_data.csv"
+# =========================
+df = pd.read_csv("main_data.csv")
+# =========================
+# FILTER DATA (2011 & Jan-Jun)
+# =========================
 
-if not os.path.exists(DATA_PATH):
-    st.error(f"File {DATA_PATH} tidak ditemukan. Pastikan data.csv ada di folder yang sama.")
-    st.stop()
+# Ambil hanya tahun 2011 (yr = 0)
+df = df[df["yr"] == 0]
 
-df = pd.read_csv(DATA_PATH)
+# Ambil hanya bulan Januari - Juni
+df = df[df["mnth"].between(1, 6)]
 
-st.success("Data berhasil dimuat")
-st.dataframe(df.head())
+# =========================
+# PREPROCESSING
+# =========================
 
-# ==============================
-# CHECK REQUIRED COLUMNS
-# ==============================
-required_columns = ["mnth", "weathersit", "cnt"]
-for col in required_columns:
-    if col not in df.columns:
-        st.error(f"Kolom '{col}' tidak ditemukan di dataset")
-        st.stop()
+# Mapping weathersit jika masih numerik
+if df["weathersit"].dtype != "object":
+    df["weathersit"] = df["weathersit"].map({
+        1: "Clear",
+        2: "Mist",
+        3: "Light Snow",
+        4: "Heavy Rain"
+    })
 
-# ==============================
-# PROCESS DATA
-# ==============================
-monthly_avg = df.groupby("mnth")["cnt"].mean()
-weather_avg = df.groupby("weathersit")["cnt"].mean()
+# Mapping season jika masih numerik
+if df["season"].dtype != "object":
+    df["season"] = df["season"].map({
+        1: "Spring",
+        2: "Summer",
+        3: "Fall",
+        4: "Winter"
+    })
 
-# ==============================
-# MONTHLY PLOT
-# ==============================
-st.subheader("Rata-rata Penyewaan per Bulan")
+# Mapping bulan (buat kolom baru)
+month_map = {
+    1: "Januari",
+    2: "Februari",
+    3: "Maret",
+    4: "April",
+    5: "Mei",
+    6: "Juni"
+}
+df["month_name"] = df["mnth"].map(month_map)
 
-if monthly_avg.empty:
-    st.warning("Data bulanan kosong")
+# Hapus data kosong yang relevan
+df = df.dropna(subset=["weathersit", "month_name", "cnt"])
+
+# =========================
+# SIDEBAR FILTER
+# =========================
+st.sidebar.header("Filter Data")
+
+# Filter cuaca
+weather_option = st.sidebar.selectbox(
+    "Pilih Kondisi Cuaca",
+    ["All", "Clear", "Mist", "Light Snow", "Heavy Rain"]
+)
+
+# Filter bulan (Januari - Juni)
+month_range = st.sidebar.slider(
+    "Pilih Rentang Bulan",
+    min_value=1,
+    max_value=6,
+    value=(1, 6)
+)
+
+# Terapkan filter bulan
+filtered_df = df[
+    (df["mnth"] >= month_range[0]) &
+    (df["mnth"] <= month_range[1])
+]
+
+# Terapkan filter cuaca
+if weather_option != "All":
+    filtered_df = filtered_df[filtered_df["weathersit"] == weather_option]
+
+# =========================
+# TITLE
+# =========================
+st.title("🚲 Dashboard Penyewaan Sepeda")
+st.write("Dashboard ini menampilkan analisis penyewaan sepeda periode Januari–Juni 2011.")
+
+# =========================
+# METRICS
+# =========================
+total_rent = filtered_df["cnt"].sum()
+avg_rent = filtered_df["cnt"].mean()
+
+if pd.isna(avg_rent):
+    avg_rent = 0
+
+col1, col2 = st.columns(2)
+col1.metric("Total Penyewaan", f"{int(total_rent):,}")
+col2.metric("Rata-rata Penyewaan", f"{int(avg_rent):,}")
+
+# =========================
+# CHART 1 - BULAN
+# =========================
+st.subheader("Rata-rata Penyewaan Sepeda per Bulan")
+
+monthly_avg = (
+    filtered_df
+    .groupby("month_name")["cnt"]
+    .mean()
+    .reindex(["Januari", "Februari", "Maret", "April", "Mei", "Juni"])
+)
+
+if monthly_avg.isna().all():
+    st.warning("Data bulanan kosong.")
 else:
     fig1, ax1 = plt.subplots()
     ax1.plot(monthly_avg.index, monthly_avg.values, marker="o")
     ax1.set_xlabel("Bulan")
     ax1.set_ylabel("Rata-rata Penyewaan")
-    ax1.set_title("Rata-rata Penyewaan Sepeda per Bulan")
+    ax1.set_title("Rata-rata Penyewaan per Bulan")
     st.pyplot(fig1)
+    plt.close()
 
-# ==============================
-# WEATHER PLOT
-# ==============================
-st.subheader("Rata-rata Penyewaan Berdasarkan Cuaca")
+# =========================
+# CHART 2 - CUACA
+# =========================
+st.subheader("Rata-rata Penyewaan Berdasarkan Kondisi Cuaca")
+
+weather_avg = filtered_df.groupby("weathersit")["cnt"].mean()
 
 if weather_avg.empty:
-    st.warning("Data cuaca kosong")
+    st.warning("Data cuaca kosong.")
 else:
     fig2, ax2 = plt.subplots()
     ax2.bar(weather_avg.index.astype(str), weather_avg.values)
-    ax2.set_xlabel("Kategori Cuaca")
+    ax2.set_xlabel("Kondisi Cuaca")
     ax2.set_ylabel("Rata-rata Penyewaan")
-    ax2.set_title("Pengaruh Cuaca Terhadap Penyewaan")
+    ax2.set_title("Rata-rata Penyewaan Berdasarkan Cuaca")
     st.pyplot(fig2)
+    plt.close()
 
-# ==============================
-# STATISTICS
-# ==============================
-st.subheader("Statistik Deskriptif")
-st.write(df["cnt"].describe())
+# =========================
+# DATA SAMPLE
+# =========================
+st.subheader("Contoh Data")
+st.dataframe(filtered_df.head())
