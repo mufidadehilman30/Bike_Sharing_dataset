@@ -7,15 +7,6 @@ import streamlit as st
 # =========================
 df = pd.read_csv("main_data.csv")
 # =========================
-# FILTER DATA (2011 & Jan-Jun)
-# =========================
-
-# Ambil hanya tahun 2011 (yr = 0)
-df = df[df["yr"] == 0]
-
-# Ambil hanya bulan Januari - Juni
-df = df[df["mnth"].between(1, 6)]
-
 # =========================
 # PREPROCESSING
 # =========================
@@ -45,7 +36,13 @@ month_map = {
     3: "Maret",
     4: "April",
     5: "Mei",
-    6: "Juni"
+    6: "Juni",
+    7: "Juli",
+    8: "Agustus",
+    9: "September",
+    10: "Oktober",
+    11: "November",
+    12: "Desember"
 }
 df["month_name"] = df["mnth"].map(month_map)
 
@@ -63,12 +60,12 @@ weather_option = st.sidebar.selectbox(
     ["All", "Clear", "Mist", "Light Snow", "Heavy Rain"]
 )
 
-# Filter bulan (Januari - Juni)
+# Filter bulan (Januari - Desember)
 month_range = st.sidebar.slider(
     "Pilih Rentang Bulan",
     min_value=1,
-    max_value=6,
-    value=(1, 6)
+    max_value=12,
+    value=(1, 12)
 )
 
 # Terapkan filter bulan
@@ -85,7 +82,7 @@ if weather_option != "All":
 # TITLE
 # =========================
 st.title("🚲 Dashboard Penyewaan Sepeda")
-st.write("Dashboard ini menampilkan analisis penyewaan sepeda periode Januari–Juni 2011.")
+st.write("Dashboard ini menampilkan analisis penyewaan sepeda periode Tahun 2011-2012.")
 
 # =========================
 # METRICS
@@ -109,7 +106,7 @@ monthly_avg = (
     filtered_df
     .groupby("month_name")["cnt"]
     .mean()
-    .reindex(["Januari", "Februari", "Maret", "April", "Mei", "Juni"])
+    .reindex(["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"])
 )
 
 if monthly_avg.isna().all():
@@ -120,6 +117,7 @@ else:
     ax1.set_xlabel("Bulan")
     ax1.set_ylabel("Rata-rata Penyewaan")
     ax1.set_title("Rata-rata Penyewaan per Bulan")
+    plt.xticks(rotation=90, ha="right")
     st.pyplot(fig1)
     plt.close()
 
