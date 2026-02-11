@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 st.title("Bike Sharing Dashboard")
 
-df = pd.read_csv("../data/main_data.csv")
+df = pd.read_csv("main_data.csv")
 
 # Filter Musim
 season_filter = st.sidebar.multiselect(
