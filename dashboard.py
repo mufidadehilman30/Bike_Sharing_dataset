@@ -3,17 +3,12 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-sns.set_style("whitegrid")
-
 # =========================
 # CONFIG PAGE
 # =========================
-st.set_page_config(
-    page_title="Bike Sharing Dashboard",
-    layout="wide"
-)
+st.set_page_config(page_title="Bike Sharing Dashboard", layout="wide")
 
-st.title("Bike Sharing Analysis Dashboard")
+st.title("Bike Sharing Dashboard")
 
 # =========================
 # LOAD DATA
@@ -23,24 +18,24 @@ def load_data():
     df = pd.read_csv("day.csv")
 
     # Hapus duplikat
-    df.drop_duplicates(inplace=True)
+    df = df.drop_duplicates()
 
-    # Mapping Season
+    # Mapping season
     season_map = {
         1: "Spring",
         2: "Summer",
         3: "Fall",
         4: "Winter"
     }
-    df["season"] = df["season"].replace(season_map)
+    df["season"] = df["season"].map(season_map)
 
-    # Mapping working day
+    # Mapping workingday
     df["day_type"] = df["workingday"].map({
         0: "Holiday",
         1: "Working Day"
     })
 
-    # Temp Category
+    # Temp category
     df["temp_category"] = pd.cut(
         df["temp"],
         bins=5,
@@ -49,69 +44,65 @@ def load_data():
 
     return df
 
+
 df = load_data()
 
 # =========================
-# SIDEBAR FILTER
+# SIDEBAR
 # =========================
-st.sidebar.header("Filter Data")
+st.sidebar.header("Filter")
 
-selected_season = st.sidebar.multiselect(
-    "Pilih Musim",
-    options=df["season"].unique(),
-    default=df["season"].unique()
+season_filter = st.sidebar.multiselect(
+    "Pilih Season",
+    df["season"].dropna().unique(),
+    default=df["season"].dropna().unique()
 )
 
-filtered_df = df[df["season"].isin(selected_season)]
+filtered_df = df[df["season"].isin(season_filter)]
 
 # =========================
-# METRIC SUMMARY
+# METRIC
 # =========================
-st.subheader("Ringkasan Data")
+st.subheader("Ringkasan")
 
 col1, col2, col3 = st.columns(3)
 
-col1.metric("Total Peminjaman", int(filtered_df["cnt"].sum()))
+col1.metric("Total Rental", int(filtered_df["cnt"].sum()))
 col2.metric("Rata-rata Temperatur", round(filtered_df["temp"].mean(), 2))
-col3.metric("Jumlah Hari", filtered_df.shape[0])
+col3.metric("Jumlah Data", filtered_df.shape[0])
 
 # =========================
-# ANALISIS 1
-# Hubungan Temperatur dan Peminjaman
+# SCATTER TEMP VS CNT
 # =========================
-st.subheader("Hubungan Temperatur dan Jumlah Peminjaman")
+st.subheader("Hubungan Temperatur dan Rental")
 
-fig1, ax1 = plt.subplots()
-sns.scatterplot(data=filtered_df, x="temp", y="cnt", ax=ax1)
-st.pyplot(fig1)
+fig, ax = plt.subplots()
+sns.scatterplot(data=filtered_df, x="temp", y="cnt", ax=ax)
+st.pyplot(fig)
 
-st.info("""
-Insight:
-Jumlah peminjaman sepeda cenderung meningkat ketika temperatur berada pada kondisi sedang hingga hangat.
-""")
+st.write(
+    "Insight: Rental meningkat ketika temperatur berada pada kondisi nyaman."
+)
 
 # =========================
-# ANALISIS 2
-# Rata-rata Peminjaman Berdasarkan Kategori Temperatur
+# BAR TEMP CATEGORY
 # =========================
-st.subheader("Rata-rata Peminjaman Berdasarkan Kategori Temperatur")
+st.subheader("Rata-rata Rental Berdasarkan Kategori Temperatur")
 
-temp_analysis = filtered_df.groupby("temp_category")["cnt"].mean()
+temp_avg = filtered_df.groupby("temp_category")["cnt"].mean().reset_index()
 
 fig2, ax2 = plt.subplots()
-sns.barplot(x=temp_analysis.index, y=temp_analysis.values, ax=ax2)
+sns.barplot(data=temp_avg, x="temp_category", y="cnt", ax=ax2)
 st.pyplot(fig2)
 
-st.info("""
-Insight:
-Kategori temperatur Moderate hingga High menunjukkan tingkat peminjaman sepeda paling tinggi.
-""")
+st.write(
+    "Insight: Temperatur moderat hingga hangat menghasilkan jumlah rental tertinggi."
+)
 
 # =========================
-# ANALISIS 3
-# Perbandingan Pengguna Berdasarkan Musim
+# SEASON ANALYSIS
 # =========================
-st.subheader("Perbandingan Pengguna Casual dan Registered Berdasarkan Musim")
+st.subheader("Perbandingan User Berdasarkan Season")
 
 season_user = filtered_df.groupby("season")[["casual", "registered"]].mean()
 
@@ -119,45 +110,17 @@ fig3, ax3 = plt.subplots()
 season_user.plot(kind="bar", ax=ax3)
 st.pyplot(fig3)
 
-st.info("""
-Insight:
-Pengguna registered cenderung lebih stabil di semua musim dibandingkan pengguna casual.
-""")
-
 # =========================
-# ANALISIS 4
-# Total Peminjaman Berdasarkan Musim
+# HEATMAP
 # =========================
-st.subheader("Total Peminjaman Berdasarkan Musim")
+st.subheader("Korelasi Variabel Numerik")
 
-season_total = filtered_df.groupby("season")["cnt"].mean()
-
-fig4, ax4 = plt.subplots()
-sns.barplot(x=season_total.index, y=season_total.values, ax=ax4)
+fig4, ax4 = plt.subplots(figsize=(10,6))
+sns.heatmap(filtered_df.corr(numeric_only=True), annot=True, ax=ax4)
 st.pyplot(fig4)
-
-st.info("""
-Insight:
-Musim tertentu menunjukkan tingkat penggunaan sepeda yang lebih tinggi dibandingkan musim lainnya.
-""")
-
-# =========================
-# HEATMAP KORELASI
-# =========================
-st.subheader("Heatmap Korelasi Variabel Numerik")
-
-fig5, ax5 = plt.subplots(figsize=(10, 6))
-sns.heatmap(filtered_df.corr(numeric_only=True), annot=True, ax=ax5)
-st.pyplot(fig5)
-
-st.info("""
-Insight:
-Variabel temperatur dan feeling temperature memiliki korelasi kuat terhadap jumlah peminjaman sepeda.
-""")
 
 # =========================
 # DATA PREVIEW
 # =========================
-st.subheader("📄 Preview Dataset")
-
+st.subheader("Preview Data")
 st.dataframe(filtered_df.head())
