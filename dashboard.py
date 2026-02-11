@@ -104,12 +104,31 @@ st.write(
 # =========================
 st.subheader("Perbandingan User Berdasarkan Season")
 
-season_user = filtered_df.groupby("season")[["casual", "registered"]].mean()
+season_user = (
+    filtered_df
+    .groupby("season")[["casual", "registered"]]
+    .mean()
+    .reset_index()
+)
+
+# Ubah format agar seaborn aman
+season_user_melt = season_user.melt(
+    id_vars="season",
+    var_name="user_type",
+    value_name="average_rental"
+)
 
 fig3, ax3 = plt.subplots()
-season_user.plot(kind="bar", ax=ax3)
-st.pyplot(fig3)
 
+sns.barplot(
+    data=season_user_melt,
+    x="season",
+    y="average_rental",
+    hue="user_type",
+    ax=ax3
+)
+
+st.pyplot(fig3)
 # =========================
 # HEATMAP
 # =========================
