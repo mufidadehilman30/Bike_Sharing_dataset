@@ -45,3 +45,4 @@ def load_data():
         df["temp"],
         bins=5,
         labels=["Very Low", "Low", "Moderate", "High", "Very High"]
+    )
