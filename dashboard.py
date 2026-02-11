@@ -17,25 +17,23 @@ st.title("Bike Sharing Dashboard")
 def load_data():
     df = pd.read_csv("main_data.csv")
 
-    # Hapus duplikat
-    df = df.drop_duplicates()
+    df.drop_duplicates(inplace=True)
 
-    # Mapping season
     season_map = {
         1: "Spring",
         2: "Summer",
         3: "Fall",
         4: "Winter"
     }
-    df["season"] = df["season"].map(season_map)
 
-    # Mapping workingday
+    if df["season"].dtype != "object":
+        df["season"] = df["season"].map(season_map)
+
     df["day_type"] = df["workingday"].map({
         0: "Holiday",
         1: "Working Day"
     })
 
-    # Temp category
     df["temp_category"] = pd.cut(
         df["temp"],
         bins=5,
@@ -43,10 +41,6 @@ def load_data():
     )
 
     return df
-
-
-df = load_data()
-
 # =========================
 # SIDEBAR
 # =========================
