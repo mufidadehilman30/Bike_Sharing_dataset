@@ -15,7 +15,7 @@ st.title("Bike Sharing Dashboard")
 # =========================
 @st.cache_data
 def load_data():
-    df = pd.read_csv("day.csv")
+    df = pd.read_csv("main_data.csv")
 
     # Hapus duplikat
     df = df.drop_duplicates()
