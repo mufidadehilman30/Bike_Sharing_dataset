@@ -18,12 +18,14 @@ st.title("Bike Sharing Analysis Dashboard")
 # =========================
 @st.cache_data
 def load_data():
-    df = pd.read_csv("main_data.csv")
+    try:
+        df = pd.read_csv("main_data.csv")
+    except:
+        st.error("File day.csv tidak ditemukan")
+        st.stop()
 
-    # Hapus duplikat
     df.drop_duplicates(inplace=True)
 
-    # Mapping season jika masih angka
     season_map = {
         1: "Spring",
         2: "Summer",
@@ -34,15 +36,16 @@ def load_data():
     if df["season"].dtype != "object":
         df["season"] = df["season"].map(season_map)
 
-    # Mapping working day
     df["day_type"] = df["workingday"].map({
         0: "Holiday",
         1: "Working Day"
     })
 
-    # Feature Engineering Temp Category
     df["temp_category"] = pd.cut(
         df["temp"],
         bins=5,
         labels=["Very Low", "Low", "Moderate", "High", "Very High"]
     )
+
+    return df
+
