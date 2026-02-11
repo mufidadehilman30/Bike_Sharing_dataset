@@ -10,18 +10,18 @@ import os
 st.set_page_config(page_title="Bike Sharing Dashboard", layout="wide")
 sns.set_style("whitegrid")
 
-st.title("🚲 Bike Sharing Dashboard")
+st.title("Bike Sharing Dashboard")
 
 # =============================
 # LOAD DATA
 # =============================
 @st.cache_data
 def load_data():
-    if not os.path.exists("day.csv"):
+    if not os.path.exists("main_data.csv"):
         st.error("File day.csv tidak ditemukan. Pastikan file ada di folder project.")
         st.stop()
 
-    df = pd.read_csv("day.csv")
+    df = pd.read_csv("main_data.csv")
 
     # Hapus duplikat
     df.drop_duplicates(inplace=True)
