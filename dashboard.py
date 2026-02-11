@@ -18,6 +18,11 @@ filtered_df = df[df["season"].isin(season_filter)]
 
 # Temperatur Analysis
 st.subheader("Pengaruh Temperatur")
+df['temp.category'] = pd.cut(
+    df['temp'],
+    bins=[0, 20, 30, 100],
+    labels=['Dingin', 'Normal', 'Panas']
+)
 
 temp_analysis = filtered_df.groupby("temp_category")["cnt"].mean()
 
